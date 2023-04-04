@@ -1,5 +1,3 @@
-import threading
-import time
 
 def singleton(cls):
     instances = {}
@@ -8,23 +6,6 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         return instances[cls]
     return get_instance
-
-class Processor(threading.Thread):
-    def __init__(self, name, queue):
-        threading.Thread.__init__(self)
-        self.name = name
-        self.queue = queue
-
-    def run(self):
-        print ("Starting " + self.name)
-        print ("Exiting " + self.name)
-
-    class cache(object):
-        def __init__(self):
-            self.state = 'I'
-            self.data = 0x0000
-            
-
 
 @singleton
 class MainMemory(object):
@@ -54,7 +35,3 @@ class MainMemory(object):
         def write(self, address, data):
             offset = address - self.address
             self.data[offset:offset + len(data)] = data
-
-
-
-
