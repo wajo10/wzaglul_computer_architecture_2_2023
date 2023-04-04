@@ -4,9 +4,10 @@ import time
 
 
 class Processor(threading.Thread):
-    def __init__(self, name):
+    def __init__(self, name: str):
         threading.Thread.__init__(self)
         self.name = name
+        self.cache = self.cache()
 
     def run(self):
         print ("Starting " + self.name)
@@ -21,35 +22,23 @@ class Processor(threading.Thread):
             self.num_blocks = 4
             self.blocks = [self.block1, self.block2, self.block3, self.block4]
 
-        def read(self, address):
+        def read(self, address:hex):
             for i in range(self.num_blocks):
                 if self.blocks[i].memory_address == address:
                     index = i
                     if self.blocks[index].state in ['M', 'O', 'E', 'S']:
                         data = self.blocks[index].data
                         self.blocks[index].state = 'S'
+                        time.sleep(0.1)
+                        return data
                     else:
-                        """
-                        # Read from memory
-                        data = memory.read(address, self.block_size)
-                        self.blocks[index].data = data
-                        self.blocks[index].state = 'S'
-                        self.blocks[index].tag = tag
-                        """
-                        data = 0x0000
+                        return False
 
-                    return data
                 else:
-                    """
-                    # Read from memory
-                    Value was not in cache
-                    """
-
-
-
+                    return False
 
         class CacheBlock:
-            def __init__(self, name):
+            def __init__(self, name:str):
                 self.name = name
                 self.memory_address = 0x0000
                 self.data = 0x0000

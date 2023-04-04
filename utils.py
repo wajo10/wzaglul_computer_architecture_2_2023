@@ -1,7 +1,7 @@
 import random
 import math
 
-def hypergeometric_distribution(M, n, N, k):
+def hypergeometric_distribution(M: int, n: int, N: int, k: int):
     """
     Muestreo aleatorio sin reemplazo de una distribución hipergeométrica
     :param M: número de elementos de interés en la población
