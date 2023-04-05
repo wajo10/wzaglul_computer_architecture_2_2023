@@ -2,7 +2,7 @@ import queue
 import threading
 
 
-class bus(object):
+class Bus(object):
     """
     Modificar para que se utilice el bus para buscar en otro cache
     """
@@ -52,3 +52,5 @@ class bus(object):
                             return data
                     else:
                         pass
+                # Read data from memory
+                data = self.memory.read(address)

@@ -1,9 +1,29 @@
-from components import processor, main_memory
+from components import processor, main_memory, bus
 
 def initialize(processors_list:list):
     global memory
-    for i in range(len(processors_list)):
-        processors_list[i].start()
+    processor1.cache.write(0x0001, 0x0108)
+    processor1.cache.print_cache()
+    print("-------------------")
+
+    processor1.cache.write(0x0003, 0x0105)
+    processor1.cache.print_cache()
+    print("-------------------")
+
+    processor1.cache.write(0x0000, 0x0102)
+    processor1.cache.print_cache()
+    print("-------------------")
+
+    processor1.cache.write(0x0002, 0x0103)
+    processor1.cache.print_cache()
+    print("------Main Memory--------")
+
+    if not processor1.cache.write(0x0004, 0x0104):
+        bus.write_main_memory(0x0004, 0x0104)
+
+    memory.print_memory()
+
+
 
 """
 To do:
@@ -15,6 +35,7 @@ To do:
     - State machine for cache blocks
     - Write the cache's methods 
     - Write the main memory's access methods
+    - Escribir en cache segun paridad
     
 
 """
@@ -28,4 +49,6 @@ if __name__ == "__main__":
     processors = [processor1, processor2, processor3, processor4]
 
     memory = main_memory.MainMemory()
+
+    bus = bus.Bus(memory, processors)
     initialize(processors)

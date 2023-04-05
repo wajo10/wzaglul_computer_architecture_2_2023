@@ -22,6 +22,10 @@ class Processor(threading.Thread):
             self.num_blocks = 4
             self.blocks = [self.block1, self.block2, self.block3, self.block4]
 
+        def print_cache(self):
+            for i in range(self.num_blocks):
+                print(self.blocks[i].name, hex(self.blocks[i].memory_address), hex(self.blocks[i].data), self.blocks[i].state)
+
         def read(self, address:hex):
             for i in range(self.num_blocks):
                 if self.blocks[i].memory_address == address:
@@ -36,6 +40,33 @@ class Processor(threading.Thread):
 
                 else:
                     return False
+
+        def write(self, address:hex, data:hex):
+            for i in range(self.num_blocks):
+                if self.blocks[i].memory_address == address:
+                    index = i
+                    if self.blocks[index].state in ['I', 'O', 'S']:
+                        self.blocks[index].data = data
+                        self.blocks[index].state = 'M'
+                        time.sleep(0.1)
+                        return True
+                    else:
+                        # Write to memory
+                        return False
+
+
+                # check if there is a free block
+                for blk in self.blocks:
+                    if blk.state == 'I':
+                        # write to block
+                        blk.memory_address = address
+                        blk.data = data
+                        blk.state = 'M'
+                        time.sleep(0.1)
+                        return True
+                # no free block
+                return False
+
 
         class CacheBlock:
             def __init__(self, name:str):
