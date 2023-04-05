@@ -49,8 +49,22 @@ class Bus(object):
                     if cache != event[2]:
                         data = cache.read(address)
                         if data:
-                            return data
+                            print("Read hit, read from cache")
+                            # Save data in cache
+                            cache = event[2]
+                            cache.write(address, data)
+                            print(cache.print_cache())
+                            break
+                        else:
+                            print(f"Read miss in cache {self.caches.index(cache)}")
+
                     else:
                         pass
                 # Read data from memory
                 data = self.memory.read(address)
+                print("Read miss, read from memory")
+                # Save data in cache
+                cache = event[2]
+                # VALIDAR QUE NO HAYA DATO VALIDO EN EL CACHE
+                cache.write(address, data)
+                print(cache.print_cache())

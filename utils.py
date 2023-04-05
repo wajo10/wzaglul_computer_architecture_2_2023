@@ -38,8 +38,10 @@ def poisson(lmbda):
         p = p * u
     return k - 1
 
-print(hypergeometric_distribution(8, 10, 20, 5))
-poisson_list = []
-for i in range(5):
-    poisson_list.append(poisson(5))
-print(poisson_list)
+def create_hex_data():
+    """
+    :return: Dirección de memoria en formato hexadecimal
+    """
+    list = hypergeometric_distribution(10, 1, 20, 16)
+    binary_string = ''.join(map(str, list))
+    return hex(int(binary_string, 2))

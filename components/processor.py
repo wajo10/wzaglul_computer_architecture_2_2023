@@ -23,8 +23,10 @@ class Processor(threading.Thread):
             self.blocks = [self.block1, self.block2, self.block3, self.block4]
 
         def print_cache(self):
+            print("__________Cache_____________")
             for i in range(self.num_blocks):
                 print(self.blocks[i].name, hex(self.blocks[i].memory_address), hex(self.blocks[i].data), self.blocks[i].state)
+            print("____________________________")
 
         def read(self, address:hex):
             for i in range(self.num_blocks):

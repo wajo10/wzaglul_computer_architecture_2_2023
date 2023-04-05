@@ -22,7 +22,7 @@ class MainMemory(object):
 
     def print_memory(self):
         for i in range(len(self.blocks)):
-            print("Block " + str(i) + ": " + str(hex(self.blocks[i].address)) + " " + str(self.blocks[i].data))
+            print("Block " + str(i) + ": " + str(hex(self.blocks[i].address)) + " " + str(hex(self.blocks[i].data)))
 
 
     def write(self, address, data):
@@ -30,7 +30,7 @@ class MainMemory(object):
             if self.blocks[i].address == address:
                 self.blocks[i].data = data
                 return True
-        return False
+        raise Exception("Memory address not found")
 
     def read(self, address):
         for i in range(len(self.blocks)):
