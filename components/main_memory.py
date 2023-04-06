@@ -24,6 +24,16 @@ class MainMemory(object):
         for i in range(len(self.blocks)):
             print("Block " + str(i) + ": " + str(hex(self.blocks[i].address)) + " " + str(hex(self.blocks[i].data)))
 
+    def get_state(self):
+        state = []
+        for idx, block in enumerate(self.blocks):
+            block_state = {"Block": idx,
+                           "Address": block.address,
+                           "Data": block.data
+                        }
+            state.append(block_state)
+        return state
+
 
     def write(self, address, data):
         for i in range(len(self.blocks)):

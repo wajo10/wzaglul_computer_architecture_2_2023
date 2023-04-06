@@ -9,7 +9,29 @@ from tkinter import ttk
 def create_cache_visualization():
     # Function to update cache and memory block states
     def update_block_state(block, new_state):
-        block.config(text=new_state)
+        address = bin(new_state['Address'])[2:]
+        if len(address) < 3:
+            address = "0" * (3 - len(address)) + address
+        txt = f"{new_state['Block']} - {address} - {hex(new_state['Data'])} - {new_state['State']}"
+        block.config(text=txt)
+
+    def update_memory(block, new_state):
+        address = bin(new_state['Address'])[2:]
+        if len(address) < 3:
+            address = "0" * (3 - len(address)) + address
+        txt = f"{address} - {hex(new_state['Data'])}"
+        memory_blocks[block].config(text=txt)
+
+    def update():
+        while True:
+            for idxC, proc in enumerate(processors):
+                for idxB, state in enumerate(proc.get_state()):
+                    update_block_state(caches[idxC][idxB], state)
+                    root.update()
+            for idxB, state in enumerate(memory.get_state()):
+                update_memory(idxB, state)
+
+
 
     # Create main window
     root = tk.Tk()
@@ -24,7 +46,12 @@ def create_cache_visualization():
     cache_frame.pack(side=tk.TOP, padx=10, pady=10)
 
     # Create cache visualizations in a 2x2 matrix
-    caches = []
+    caches = [
+        [],
+        [],
+        [],
+        []
+    ]
     for i in range(2):
         for j in range(2):
             cache = tk.Frame(cache_frame, relief=tk.RAISED, borderwidth=1, width=200, height=200)
@@ -41,7 +68,10 @@ def create_cache_visualization():
             for k in range(4):
                 block = tk.Label(cache, text="Block {}: 0x0000 - FREE".format(k), anchor=tk.W, justify=tk.LEFT, wraplength=180)
                 block.pack(side=tk.TOP, fill=tk.X)
-                caches.append(block)
+                if i == 0:
+                    caches[j].append(block)
+                else:
+                    caches[j+i+1].append(block)
 
     # Create style for memory blocks
     memory_block_style = ttk.Style()
@@ -93,6 +123,9 @@ def create_cache_visualization():
     button2.config(command=handle_button2_click)
     button3.config(command=handle_button3_click)
 
+    updt = threading.Thread(target=update)
+    updt.start()
+
     # Start main event loop
     root.mainloop()
 
@@ -100,31 +133,17 @@ def create_cache_visualization():
 def initialize():
     global processors
     while True:
-        proc: processor.Processor = random.choice(processors)
-        inst = utils.hypergeometric_distribution(10, 2, 20, 1)[0]
-        if inst == 0:
-            address = (utils.hypergeometric_distribution(100, 7, 155, 1)[0])
-            print(f" Instruction: read from {proc.name} at address {hex(address)}")
-            proc.add_instruction(['read', address])
-        elif inst == 1:
-            data = int(utils.create_hex_data(),16)
-            address = (utils.hypergeometric_distribution(100, 7, 155, 1)[0])
-            print(f" Instruction: write {hex(data)} to {proc.name} at address {hex(address)}")
-            proc.add_instruction(['write', address, data])
-
-        else:
-            print("calc")
-
-        time.sleep(1)
+        for proc in processors:
+            proc.generate_random_instruction()
+            time.sleep(2)
 
 
 
 
 """
 To do:
-    - Start working on the GUI
     - Figure out how to do step by step execution
-    - Make that each processor generates its own instructions
+    - Show Logs in GUI
 
 """
 

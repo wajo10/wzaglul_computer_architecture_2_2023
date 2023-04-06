@@ -1,6 +1,7 @@
 import threading
 import time
 from components import  bus
+import utils
 
 
 
@@ -14,6 +15,28 @@ class Processor(threading.Thread):
 
     def set_bus(self, bus_: bus.Bus):
         self.bus = bus_
+
+    def get_state(self):
+        state = []
+        for block in self.cache.blocks:
+            block_state = {"Block": block.name,
+                           "Address": block.memory_address,
+                           "Data": block.data,
+                           "State": block.state}
+            state.append(block_state)
+        return state
+
+
+    def generate_random_instruction(self):
+        inst = utils.hypergeometric_distribution(10, 2, 20, 1)[0]
+        address = (utils.hypergeometric_distribution(100, 7, 155, 1)[0])
+        if inst == 0:
+            self.add_instruction(['read', address])
+        elif inst == 1:
+            data = int(utils.create_hex_data(), 16)
+            self.add_instruction(['write', address, data])
+        else:
+            print("calc")
 
     def add_instruction(self, instruction):
         self.instructions.append(instruction)
