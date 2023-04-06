@@ -1,3 +1,5 @@
+import sys
+
 from components import processor, main_memory, bus
 import time
 import utils
@@ -171,6 +173,11 @@ def create_cache_visualization():
         if step_exec:
             step = True
             log_text.insert(tk.END, "----------------------------------------------------------\n")
+        else:
+            popup = popupWindow(root)
+            root.wait_window(popup.top)
+            print(popup.processor.get(), popup.instruction.get())
+
 
 
     # Bind button click events to their respective handlers
@@ -186,6 +193,76 @@ def create_cache_visualization():
 
     # Start main event loop
     root.mainloop()
+
+class popupWindow(object):
+    def __init__(self,master):
+        self.b = None
+        self.e = None
+        self.addr_data = None
+        self.data = None
+        self.value = None
+        self.top=self.top=tk.Toplevel(master)
+        self.l=tk.Label(self.top,text="Enter the instruction")
+        self.l.pack()
+        self.p_label = tk.Label(self.top, text="Processor: ")
+        self.p_label.pack()
+        self.processor = tk.StringVar(value='1')
+        spin_box = ttk.Spinbox(
+            self.top,
+            from_=1,
+            to=4,
+            textvariable=self.processor,
+            wrap=True)
+        spin_box.pack()
+
+        self.i_label = tk.Label(self.top, text="Instruction: ")
+        self.i_label.pack()
+
+        self.instruction = tk.StringVar()
+        instr = ttk.Combobox(self.top, width=27, textvariable=self.instruction)
+
+        # Adding combobox drop down list
+        instr['values'] = ('READ','WRITE')
+        instr.pack()
+
+        self.addr_label = tk.Label(self.top, text="Address: ")
+        self.addr_label.pack()
+        self.addr = tk.StringVar()
+        addr = ttk.Combobox(self.top, width=27, textvariable=self.addr)
+        addr['values'] = ('000','001','010','011','100','101','110','111')
+        addr.pack()
+
+        self.instruction.trace_add(  # add a trace to watch cb_var
+            'write',  # callback will be triggered whenever cb_var is written
+            self.set_func  # callback function goes here!
+        )
+
+
+        self.closed = False
+
+    def set_func(self, *args):
+        if self.instruction.get() == 'WRITE':
+            self.addr_data = tk.Label(self.top, text="Data: ")
+            self.addr_data.pack()
+
+            self.data = tk.StringVar()
+            self.e = tk.Entry(self.top, textvariable=self.data)
+            self.e.pack()
+        else:
+            if self.addr_data is not None:
+                self.addr_data.destroy()
+            if self.e is not None:
+                self.e.destroy()
+
+        if self.b is None:
+            self.b = tk.Button(self.top, text='Ok', command=self.cleanup)
+            self.b.pack()
+
+
+    def cleanup(self):
+        self.value=self.e.get()
+        self.closed = True
+        self.top.destroy()
 
 
 def initialize():
