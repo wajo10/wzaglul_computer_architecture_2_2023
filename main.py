@@ -1,3 +1,5 @@
+import sys
+
 from components import processor, main_memory, bus
 import time
 import utils
@@ -5,6 +7,10 @@ import random
 import threading
 import tkinter as tk
 from tkinter import ttk
+
+pause = False
+step_exec = False
+step = True
 
 def create_cache_visualization():
     # Function to update cache and memory block states
@@ -28,6 +34,7 @@ def create_cache_visualization():
                 for idxB, state in enumerate(proc.get_state()):
                     update_block_state(caches[idxC][idxB], state)
                     root.update()
+                instructions[idxC].config(text=f"Executing Instruction:\n{proc.last_instruction}")
             for idxB, state in enumerate(memory.get_state()):
                 update_memory(idxB, state)
 
@@ -35,7 +42,7 @@ def create_cache_visualization():
 
     # Create main window
     root = tk.Tk()
-    root.title("Cache Visualization")
+    root.title("MOESI Cache Coherence Protocol Simulator")
 
     # Create style for cache titles
     cache_title_style = ttk.Style()
@@ -52,18 +59,21 @@ def create_cache_visualization():
         [],
         []
     ]
+    instructions = []
+    count = 0
     for i in range(2):
         for j in range(2):
             cache = tk.Frame(cache_frame, relief=tk.RAISED, borderwidth=1, width=200, height=200)
             cache.pack(side=tk.LEFT, padx=10, pady=10)
 
             # Create cache title
-            cache_title = ttk.Label(cache, text="Cache {}-{}".format(i+1, j+1), style="CacheTitle.TLabel")
+            cache_title = ttk.Label(cache, text="Processor {}".format(count), style="CacheTitle.TLabel")
             cache_title.pack(side=tk.TOP, fill=tk.X)
 
             # Create space for executing instruction
             instruction_label = tk.Label(cache, text="Executing Instruction: ", anchor=tk.W, justify=tk.LEFT, wraplength=180)
             instruction_label.pack(side=tk.TOP, fill=tk.X)
+            instructions.append(instruction_label)
 
             for k in range(4):
                 block = tk.Label(cache, text="Block {}: 0x0000 - FREE".format(k), anchor=tk.W, justify=tk.LEFT, wraplength=180)
@@ -72,6 +82,7 @@ def create_cache_visualization():
                     caches[j].append(block)
                 else:
                     caches[j+i+1].append(block)
+            count += 1
 
     # Create style for memory blocks
     memory_block_style = ttk.Style()
@@ -91,32 +102,88 @@ def create_cache_visualization():
     # Create log window
     log_label = ttk.Label(root, text="Log Window", font=("Helvetica", 14, "bold"))
     log_label.pack()
-    log_text = tk.Text(root, height=10, width=50)
+    log_text = tk.Text(root, height=10, width=60)
     log_text.pack(side=tk.BOTTOM, padx=10, pady=10)
 
     # Create buttons
     button_frame = tk.Frame(root)
     button_frame.pack(side=tk.BOTTOM)
-    button1 = ttk.Button(button_frame, text="Button 1")
+    button1 = ttk.Button(button_frame, text="Pause")
     button1.pack(side=tk.LEFT, padx=5, pady=5)
-    button2 = ttk.Button(button_frame, text="Button 2")
+    button2 = ttk.Button(button_frame, text="Step By Step")
     button2.pack(side=tk.LEFT, padx=5, pady=5)
-    button3 = ttk.Button(button_frame, text="Button 3")
+    button3 = ttk.Button(button_frame, text="--", state=tk.DISABLED)
     button3.pack(side=tk.LEFT, padx=5, pady=5)
 
+    def add_logs():
+        while True:
+            log = logger.pop_log()
+            if log:
+                log_text.insert(tk.END, log + "\n")
+                log_text.see("end")
+            time.sleep(0.1)
     # Function to handle button clicks
     def handle_button_click(button_num):
         log_text.insert(tk.END, "Button {} clicked\n".format(button_num))
+        log_text.see("end")
 
         # Function to handle button clicks
     def handle_button1_click():
-        handle_button_click(1)
+        global pause
+        pause = not pause
+        if pause:
+            button1.config(text="Resume")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            log_text.insert(tk.END, "Pausing. Waiting for pending instructions to complete...\n")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            button3.config(text="Custom Instruction", state=tk.NORMAL)
+
+        else:
+            button1.config(text="Pause")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            log_text.insert(tk.END, "Resuming...\n")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            button3.config(text="Custom Instruction", state=tk.DISABLED)
 
     def handle_button2_click():
-        handle_button_click(2)
+        global step_exec, step, pause
+        step_exec = not step_exec
+        if step_exec:
+            button2.config(text="Continuous")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            log_text.insert(tk.END, "Step By Step Enabled.Waiting for pending instructions to complete\n")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            button3.config(text="Next Step", state=tk.NORMAL)
+            pause = False
+            step = False
+            button1.config(text="Pause", state=tk.DISABLED)
+        else:
+            button2.config(text="Step By Step")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            log_text.insert(tk.END, "Continuous Execution Enabled\n")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            # Disable button3
+            button3.config(text="Next Step", state=tk.DISABLED)
+            button1.config(text="Pause", state=tk.NORMAL)
+            step = True
+
 
     def handle_button3_click():
-        handle_button_click(3)
+        global step, step_exec, pause
+        if step_exec:
+            step = True
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+        else:
+            popup = popupWindow(root)
+            root.wait_window(popup.top)
+            selected_proc = int(popup.processor.get())
+            selected_ins = popup.instruction.get()
+            selected_addr = popup.addr.get()
+            selected_data = popup.data.get()
+
+            create_instruction(selected_proc, selected_ins, selected_addr, selected_data)
+
+
 
     # Bind button click events to their respective handlers
     button1.config(command=handle_button1_click)
@@ -126,15 +193,103 @@ def create_cache_visualization():
     updt = threading.Thread(target=update)
     updt.start()
 
+    lgg = threading.Thread(target=add_logs)
+    lgg.start()
+
     # Start main event loop
     root.mainloop()
 
+class popupWindow(object):
+    def __init__(self,master):
+        self.b = None
+        self.e = None
+        self.addr_data = None
+        self.data = tk.StringVar()
+        self.value = None
+        self.top=self.top=tk.Toplevel(master)
+        self.l=tk.Label(self.top,text="Enter the instruction")
+        self.l.pack()
+        self.p_label = tk.Label(self.top, text="Processor: ")
+        self.p_label.pack()
+        self.processor = tk.StringVar(value='0')
+        spin_box = ttk.Spinbox(
+            self.top,
+            from_=0,
+            to=3,
+            textvariable=self.processor,
+            wrap=True)
+        spin_box.pack()
+
+        self.i_label = tk.Label(self.top, text="Instruction: ")
+        self.i_label.pack()
+
+        self.instruction = tk.StringVar()
+        instr = ttk.Combobox(self.top, width=27, textvariable=self.instruction)
+
+        # Adding combobox drop down list
+        instr['values'] = ('READ','WRITE')
+        instr.pack()
+
+        self.addr_label = tk.Label(self.top, text="Address: ")
+        self.addr_label.pack()
+        self.addr = tk.StringVar()
+        addr = ttk.Combobox(self.top, width=27, textvariable=self.addr)
+        addr['values'] = ('000','001','010','011','100','101','110','111')
+        addr.pack()
+
+        self.instruction.trace_add(  # add a trace to watch cb_var
+            'write',  # callback will be triggered whenever cb_var is written
+            self.set_func  # callback function goes here!
+        )
+
+
+        self.closed = False
+
+    def set_func(self, *args):
+        if self.instruction.get() == 'WRITE':
+            self.addr_data = tk.Label(self.top, text="Data: ")
+            self.addr_data.pack()
+
+            self.e = tk.Entry(self.top, textvariable=self.data)
+            self.e.pack()
+        else:
+            if self.addr_data is not None:
+                self.addr_data.destroy()
+            if self.e is not None:
+                self.e.destroy()
+
+        if self.b is None:
+            self.b = tk.Button(self.top, text='Ok', command=self.cleanup)
+            self.b.pack()
+
+
+    def cleanup(self):
+        self.closed = True
+        self.top.destroy()
+
+def create_instruction(proc:int, instruction:str, addr:str, data):
+    global processors
+    # bin string to int
+    addr = int(addr, 2)
+    if instruction == 'READ':
+        print([instruction, addr])
+        return processors[proc].add_instruction(['read', addr])
+    elif instruction == 'WRITE':
+        data = int(data, 16)
+        print([instruction, addr, data])
+        return processors[proc].add_instruction(['write', addr, data])
+
+
 
 def initialize():
-    global processors
+    global processors, step, step_exec, pause
     while True:
-        for proc in processors:
+        if not pause and step:
+            proc = random.choice(processors)
             proc.generate_random_instruction()
+            if step_exec:
+                step = False
+
             time.sleep(2)
 
 
@@ -144,26 +299,30 @@ def initialize():
 To do:
     - Figure out how to do step by step execution
     - Show Logs in GUI
+    - FIX reading M changes M->0 and the other one to M while it should be S
+    
 
 """
 
 
 if __name__ == "__main__":
-    processor1 = processor.Processor("P0")
-    processor2 = processor.Processor("P1")
-    processor3 = processor.Processor("P2")
-    processor4 = processor.Processor("P3")
+    logger = utils.Logs()
+
+    processor1 = processor.Processor("P0", logger)
+    processor2 = processor.Processor("P1", logger)
+    processor3 = processor.Processor("P2", logger)
+    processor4 = processor.Processor("P3", logger)
     processors = [processor1, processor2, processor3, processor4]
 
     memory = main_memory.MainMemory()
 
-    bus = bus.Bus(memory, processors)
+    bus = bus.Bus(memory, processors, logger)
 
     for proc in processors:
         proc.set_bus(bus)
         proc.start()
 
     x = threading.Thread(target=initialize)
-    y = threading.Thread(target=create_cache_visualization)
-    y.start()
+    gui = threading.Thread(target=create_cache_visualization) # GUI Thread
+    gui.start()
     x.start()

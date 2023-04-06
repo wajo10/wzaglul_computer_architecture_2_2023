@@ -1,5 +1,6 @@
 import queue
 import threading
+from utils import Logs
 
 def singleton(cls):
     instances = {}
@@ -14,8 +15,9 @@ class Bus(object):
     """
     Modificar para que se utilice el bus para buscar en otro cache
     """
-    def __init__(self, memory, processors):
+    def __init__(self, memory, processors, logger: Logs):
         self.memory = memory
+        self.logger = logger
         self.caches = []
         for processor in processors:
             self.caches.append(processor.cache)
@@ -66,6 +68,7 @@ class Bus(object):
                         data = cache.read(address)
                         if data is not False:
                             print(f"Read hit, read from cache {cache.name}")
+                            self.logger.add_log(f"Read hit, {event[2].name} read from cache {cache.name}")
                             # Save data in cache
                             if not solicited_cache.write(address, data, True):
                                 self.invalidate_cache(address, [solicited_cache, cache])
@@ -83,6 +86,7 @@ class Bus(object):
                     # Read data from memory
                     data = self.memory.read(address)
                     print("Read miss in all caches, reading from memory")
+                    self.logger.add_log(f"Read miss in all caches, {event[2].name} is now reading from memory")
                     # Save data in cache
                     cache = event[2]
                     cache.write_from_memory(address, data)

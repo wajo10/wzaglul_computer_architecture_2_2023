@@ -1,4 +1,4 @@
-
+from utils import Logs
 def singleton(cls):
     instances = {}
     def get_instance(*args, **kwargs):
@@ -19,6 +19,7 @@ class MainMemory(object):
         self.block7 = self.MemoryBlock( 0x0006)
         self.block8 = self.MemoryBlock( 0x0007)
         self.blocks = [self.block1, self.block2, self.block3, self.block4, self.block5, self.block6, self.block7, self.block8]
+
 
     def print_memory(self):
         for i in range(len(self.blocks)):

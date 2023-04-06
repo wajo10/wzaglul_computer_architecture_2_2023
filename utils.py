@@ -45,3 +45,20 @@ def create_hex_data():
     list = hypergeometric_distribution(10, 1, 20, 16)
     binary_string = ''.join(map(str, list))
     return hex(int(binary_string, 2))
+
+class Logs(object):
+    def __init__(self):
+        self.logs = []
+
+    def add_log(self, log):
+        self.logs.append(log)
+
+    def print_logs(self):
+        for log in self.logs:
+            print(log)
+
+    def pop_log(self):
+        if len(self.logs) > 0:
+            return self.logs.pop(0)
+        else:
+            return False
