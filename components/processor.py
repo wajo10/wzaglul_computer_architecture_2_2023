@@ -6,12 +6,14 @@ import utils
 
 
 class Processor(threading.Thread):
-    def __init__(self, name: str):
+    def __init__(self, name: str, logger: utils.Logs):
         threading.Thread.__init__(self)
         self.bus = None
         self.name = name
         self.cache = self.cache(name, self)
         self.instructions = []
+        self.last_instruction = ""
+        self.logger = logger
 
     def set_bus(self, bus_: bus.Bus):
         self.bus = bus_
@@ -31,11 +33,19 @@ class Processor(threading.Thread):
         inst = utils.hypergeometric_distribution(10, 2, 20, 1)[0]
         address = (utils.hypergeometric_distribution(100, 7, 155, 1)[0])
         if inst == 0:
+            instruction = f"{self.name}: READ {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}"
+            self.last_instruction = instruction
+            self.logger.add_log(instruction)
             self.add_instruction(['read', address])
         elif inst == 1:
             data = int(utils.create_hex_data(), 16)
+            instruction = f"{self.name}: WRITE {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}; {hex(data)}"
+            self.last_instruction = instruction
+            self.logger.add_log(instruction)
             self.add_instruction(['write', address, data])
         else:
+            self.last_instruction = f"{self.name}: CALC"
+            self.logger.add_log(f"{self.name}: CALC")
             print("calc")
 
     def add_instruction(self, instruction):
@@ -51,17 +61,21 @@ class Processor(threading.Thread):
                     value = self.cache.read_self(instruction[1])
                     if value is not False:
                         print(f"Hit! Processor {self.name} read {hex(value)} from address {hex(instruction[1])}")
+                        self.logger.add_log(f"Hit! Processor {self.name} read {hex(value)} from address {bin(instruction[1])[2:]}")
                         self.cache.print_cache()
                     else:
                         print("Read Miss! Go to Bus")
+                        self.logger.add_log(f"Read Miss! {self.name} read from address {bin(instruction[1])[2:]}")
                         self.bus.read_cache(instruction[1], self.cache)
 
                 elif instruction[0] == 'write':
                     if self.cache.write(instruction[1], instruction[2]):
                         print(f"Processor {self.name} wrote {hex(instruction[2])} to address {hex(instruction[1])}")
+                        self.logger.add_log(f"Processor {self.name} wrote {hex(instruction[2])} to address {bin(instruction[1])[2:]}")
                         self.cache.print_cache()
                     else:
                         print("Write Miss!")
+                        self.logger.add_log(f"Write Miss! {self.name}")
                         self.bus.invalidate_cache(instruction[1], [self.cache])
                         self.cache.print_cache()
             else:
@@ -192,6 +206,7 @@ class Processor(threading.Thread):
                 if blk.memory_address == address:
                     blk.state = 'I'
                     print(f"Cache {self.name} invalidated block {blk.name} at address {hex(address)}")
+                    self.processor.logger.add_log(f"Cache {self.name} invalidated block {blk.name} at address {bin(address)[2:]}")
                     return True
             return False
 
