@@ -7,6 +7,8 @@ import tkinter as tk
 from tkinter import ttk
 
 pause = False
+step_exec = False
+step = True
 
 def create_cache_visualization():
     # Function to update cache and memory block states
@@ -106,9 +108,9 @@ def create_cache_visualization():
     button_frame.pack(side=tk.BOTTOM)
     button1 = ttk.Button(button_frame, text="Pause")
     button1.pack(side=tk.LEFT, padx=5, pady=5)
-    button2 = ttk.Button(button_frame, text="Button 2")
+    button2 = ttk.Button(button_frame, text="Step By Step")
     button2.pack(side=tk.LEFT, padx=5, pady=5)
-    button3 = ttk.Button(button_frame, text="Button 3")
+    button3 = ttk.Button(button_frame, text="--", state=tk.DISABLED)
     button3.pack(side=tk.LEFT, padx=5, pady=5)
 
     def add_logs():
@@ -132,18 +134,44 @@ def create_cache_visualization():
             log_text.insert(tk.END, "----------------------------------------------------------\n")
             log_text.insert(tk.END, "Pausing. Waiting for pending instructions to complete...\n")
             log_text.insert(tk.END, "----------------------------------------------------------\n")
+            button3.config(text="Custom Instruction", state=tk.NORMAL)
 
         else:
             button1.config(text="Pause")
             log_text.insert(tk.END, "----------------------------------------------------------\n")
             log_text.insert(tk.END, "Resuming...\n")
             log_text.insert(tk.END, "----------------------------------------------------------\n")
+            button3.config(text="Custom Instruction", state=tk.DISABLED)
 
     def handle_button2_click():
-        handle_button_click(2)
+        global step_exec, step, pause
+        step_exec = not step_exec
+        if step_exec:
+            button2.config(text="Continuous")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            log_text.insert(tk.END, "Step By Step Enabled.Waiting for pending instructions to complete\n")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            button3.config(text="Next Step", state=tk.NORMAL)
+            pause = False
+            step = False
+            button1.config(text="Pause", state=tk.DISABLED)
+        else:
+            button2.config(text="Step By Step")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            log_text.insert(tk.END, "Continuous Execution Enabled\n")
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+            # Disable button3
+            button3.config(text="Next Step", state=tk.DISABLED)
+            button1.config(text="Pause", state=tk.NORMAL)
+            step = True
+
 
     def handle_button3_click():
-        handle_button_click(3)
+        global step, step_exec, pause
+        if step_exec:
+            step = True
+            log_text.insert(tk.END, "----------------------------------------------------------\n")
+
 
     # Bind button click events to their respective handlers
     button1.config(command=handle_button1_click)
@@ -161,12 +189,15 @@ def create_cache_visualization():
 
 
 def initialize():
-    global processors
+    global processors, step, step_exec, pause
     while True:
-        if not pause:
-            for proc in processors:
-                proc.generate_random_instruction()
-                time.sleep(2)
+        if not pause and step:
+            proc = random.choice(processors)
+            proc.generate_random_instruction()
+            if step_exec:
+                step = False
+
+            time.sleep(2)
 
 
 
@@ -198,6 +229,6 @@ if __name__ == "__main__":
         proc.start()
 
     x = threading.Thread(target=initialize)
-    y = threading.Thread(target=create_cache_visualization)
-    y.start()
+    gui = threading.Thread(target=create_cache_visualization) # GUI Thread
+    gui.start()
     x.start()
