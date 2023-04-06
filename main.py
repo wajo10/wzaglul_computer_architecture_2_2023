@@ -176,7 +176,12 @@ def create_cache_visualization():
         else:
             popup = popupWindow(root)
             root.wait_window(popup.top)
-            print(popup.processor.get(), popup.instruction.get())
+            selected_proc = int(popup.processor.get())
+            selected_ins = popup.instruction.get()
+            selected_addr = popup.addr.get()
+            selected_data = popup.data.get()
+
+            create_instruction(selected_proc, selected_ins, selected_addr, selected_data)
 
 
 
@@ -199,18 +204,18 @@ class popupWindow(object):
         self.b = None
         self.e = None
         self.addr_data = None
-        self.data = None
+        self.data = tk.StringVar()
         self.value = None
         self.top=self.top=tk.Toplevel(master)
         self.l=tk.Label(self.top,text="Enter the instruction")
         self.l.pack()
         self.p_label = tk.Label(self.top, text="Processor: ")
         self.p_label.pack()
-        self.processor = tk.StringVar(value='1')
+        self.processor = tk.StringVar(value='0')
         spin_box = ttk.Spinbox(
             self.top,
-            from_=1,
-            to=4,
+            from_=0,
+            to=3,
             textvariable=self.processor,
             wrap=True)
         spin_box.pack()
@@ -245,7 +250,6 @@ class popupWindow(object):
             self.addr_data = tk.Label(self.top, text="Data: ")
             self.addr_data.pack()
 
-            self.data = tk.StringVar()
             self.e = tk.Entry(self.top, textvariable=self.data)
             self.e.pack()
         else:
@@ -260,9 +264,21 @@ class popupWindow(object):
 
 
     def cleanup(self):
-        self.value=self.e.get()
         self.closed = True
         self.top.destroy()
+
+def create_instruction(proc:int, instruction:str, addr:str, data):
+    global processors
+    # bin string to int
+    addr = int(addr, 2)
+    if instruction == 'READ':
+        print([instruction, addr])
+        return processors[proc].add_instruction(['read', addr])
+    elif instruction == 'WRITE':
+        data = int(data, 16)
+        print([instruction, addr, data])
+        return processors[proc].add_instruction(['write', addr, data])
+
 
 
 def initialize():
@@ -284,6 +300,7 @@ To do:
     - Figure out how to do step by step execution
     - Show Logs in GUI
     - FIX reading M changes M->0 and the other one to M while it should be S
+    
 
 """
 

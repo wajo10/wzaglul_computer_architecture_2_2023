@@ -174,7 +174,7 @@ class Processor(threading.Thread):
                         blk.state = 'M'
                         return False
                 # If no empty blocks, replace the first block and save the data
-                self.processor.bus.write_main_memory(address, data)
+                self.processor.bus.write_main_memory(self.blocks[0].memory_address, self.blocks[0].data)
                 self.blocks[0].memory_address = address
                 self.blocks[0].data = data
                 if comes_from_cache:
@@ -191,7 +191,7 @@ class Processor(threading.Thread):
                         blk.state = 'M'
                         return False
                 # If no empty blocks, replace the first block and save the data
-                self.processor.bus.write_main_memory(address, data)
+                self.processor.bus.write_main_memory(self.blocks[2].memory_address, self.blocks[2].data)
                 self.blocks[2].memory_address = address
                 self.blocks[2].data = data
                 if comes_from_cache:
