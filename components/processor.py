@@ -161,7 +161,10 @@ class Processor(threading.Thread):
                     else:
                         # Return False to indicate that invalidation is needed
                         blk.data = data
-                        blk.state = 'M'
+                        if comes_from_cache:
+                            blk.state = 'S'
+                        else:
+                            blk.state = 'M'
                         return False
 
             if address % 2 == 0:
@@ -171,7 +174,8 @@ class Processor(threading.Thread):
                         blk.data = data
                         if comes_from_cache:
                             blk.state = 'S'
-                        blk.state = 'M'
+                        else:
+                            blk.state = 'M'
                         return False
                 # If no empty blocks, replace the first block and save the data
                 self.processor.bus.write_main_memory(self.blocks[0].memory_address, self.blocks[0].data)
@@ -188,7 +192,8 @@ class Processor(threading.Thread):
                         blk.data = data
                         if comes_from_cache:
                             blk.state = 'S'
-                        blk.state = 'M'
+                        else:
+                            blk.state = 'M'
                         return False
                 # If no empty blocks, replace the first block and save the data
                 self.processor.bus.write_main_memory(self.blocks[2].memory_address, self.blocks[2].data)
@@ -196,7 +201,8 @@ class Processor(threading.Thread):
                 self.blocks[2].data = data
                 if comes_from_cache:
                   self.blocks[2].state = 'S'
-                self.blocks[2].state = 'E'
+                else:
+                    self.blocks[2].state = 'E'
                 return False
 
 

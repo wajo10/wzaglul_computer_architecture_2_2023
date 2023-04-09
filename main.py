@@ -237,8 +237,8 @@ class popupWindow(object):
         addr['values'] = ('000','001','010','011','100','101','110','111')
         addr.pack()
 
-        self.instruction.trace_add(  # add a trace to watch cb_var
-            'write',  # callback will be triggered whenever cb_var is written
+        self.instruction.trace_add(  # add a trace to watch instruction
+            'write',  # callback will be triggered whenever instruction is written
             self.set_func  # callback function goes here!
         )
 
