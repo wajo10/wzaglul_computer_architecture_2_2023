@@ -7,6 +7,7 @@ import random
 import threading
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 
 pause = False
 step_exec = False
@@ -181,7 +182,17 @@ def create_cache_visualization():
             selected_addr = popup.addr.get()
             selected_data = popup.data.get()
 
-            create_instruction(selected_proc, selected_ins, selected_addr, selected_data)
+            if selected_addr == "" or selected_data == "":
+                messagebox.showerror("Error", "Please enter the address and data")
+
+            else:
+                try:
+                    hex(int(selected_addr, 16))
+                    bin(int(selected_data, 2))
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter valid address and data")
+                    return
+                create_instruction(selected_proc, selected_ins, selected_addr, selected_data)
 
 
 
@@ -199,6 +210,9 @@ def create_cache_visualization():
     # Start main event loop
     root.mainloop()
 
+def disable_event():
+    pass
+@main_memory.singleton
 class popupWindow(object):
     def __init__(self,master):
         self.b = None
@@ -212,6 +226,7 @@ class popupWindow(object):
         self.p_label = tk.Label(self.top, text="Processor: ")
         self.p_label.pack()
         self.processor = tk.StringVar(value='0')
+        self.top.protocol("WM_DELETE_WINDOW", disable_event)
         spin_box = ttk.Spinbox(
             self.top,
             from_=0,
