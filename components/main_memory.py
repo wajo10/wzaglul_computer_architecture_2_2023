@@ -1,4 +1,4 @@
-from utils import Logs
+import time
 def singleton(cls):
     instances = {}
     def get_instance(*args, **kwargs):
@@ -40,12 +40,14 @@ class MainMemory(object):
         for i in range(len(self.blocks)):
             if self.blocks[i].address == address:
                 self.blocks[i].data = data
+                time.sleep(0.3)
                 return True
         raise Exception("Memory address not found")
 
     def read(self, address):
         for i in range(len(self.blocks)):
             if self.blocks[i].address == address:
+                time.sleep(0.2)
                 return self.blocks[i].data
         return False
 

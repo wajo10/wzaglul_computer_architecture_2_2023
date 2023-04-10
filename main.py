@@ -1,5 +1,4 @@
 import sys
-
 from components import processor, main_memory, bus
 import time
 import utils
@@ -8,6 +7,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import asyncio
 
 pause = False
 step_exec = False
@@ -122,7 +122,7 @@ def create_cache_visualization():
             if log:
                 log_text.insert(tk.END, log + "\n")
                 log_text.see("end")
-            time.sleep(0.1)
+            time.sleep(0.01)
     # Function to handle button clicks
     def handle_button_click(button_num):
         log_text.insert(tk.END, "Button {} clicked\n".format(button_num))
@@ -138,6 +138,8 @@ def create_cache_visualization():
             log_text.insert(tk.END, "Pausing. Waiting for pending instructions to complete...\n")
             log_text.insert(tk.END, "----------------------------------------------------------\n")
             button3.config(text="Custom Instruction", state=tk.NORMAL)
+            for proc in processors:
+                proc.pause()
 
         else:
             button1.config(text="Pause")
@@ -145,6 +147,8 @@ def create_cache_visualization():
             log_text.insert(tk.END, "Resuming...\n")
             log_text.insert(tk.END, "----------------------------------------------------------\n")
             button3.config(text="Custom Instruction", state=tk.DISABLED)
+            for proc in processors:
+                proc.resume()
 
     def handle_button2_click():
         global step_exec, step, pause
@@ -176,23 +180,27 @@ def create_cache_visualization():
             log_text.insert(tk.END, "----------------------------------------------------------\n")
         else:
             popup = popupWindow(root)
+            button3.config(state=tk.DISABLED)
             root.wait_window(popup.top)
             selected_proc = int(popup.processor.get())
             selected_ins = popup.instruction.get()
             selected_addr = popup.addr.get()
             selected_data = popup.data.get()
 
-            if selected_addr == "" or selected_data == "":
+            if selected_addr == "" or (selected_data == "" and selected_ins == "WRITE"):
                 messagebox.showerror("Error", "Please enter the address and data")
 
             else:
                 try:
-                    hex(int(selected_addr, 16))
-                    bin(int(selected_data, 2))
-                except ValueError:
+                    bin(int(selected_addr, 2))
+                    if selected_ins == "WRITE":
+                        hex(int(selected_data, 16))
+                except ValueError as e:
                     messagebox.showerror("Error", "Please enter valid address and data")
+                    print(e)
                     return
                 create_instruction(selected_proc, selected_ins, selected_addr, selected_data)
+            button3.config(state=tk.NORMAL)
 
 
 
@@ -212,7 +220,7 @@ def create_cache_visualization():
 
 def disable_event():
     pass
-@main_memory.singleton
+
 class popupWindow(object):
     def __init__(self,master):
         self.b = None
@@ -300,24 +308,14 @@ def initialize():
     global processors, step, step_exec, pause
     while True:
         if not pause and step:
-            proc = random.choice(processors)
-            proc.generate_random_instruction()
+            for proc in processors:
+                # call asynchronously
+                asyncio.run(proc.generate_random_instruction())
+
             if step_exec:
                 step = False
 
-            time.sleep(2)
-
-
-
-
-"""
-To do:
-    - Figure out how to do step by step execution
-    - Show Logs in GUI
-    - FIX reading M changes M->0 and the other one to M while it should be S
-    
-
-"""
+            time.sleep(0.5)
 
 
 if __name__ == "__main__":

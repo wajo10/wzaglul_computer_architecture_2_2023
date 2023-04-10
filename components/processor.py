@@ -2,6 +2,7 @@ import threading
 import time
 from components import  bus
 import utils
+import asyncio
 
 
 
@@ -14,6 +15,8 @@ class Processor(threading.Thread):
         self.instructions = []
         self.last_instruction = ""
         self.logger = logger
+        self.queue = asyncio.Queue()
+        self.pause_exec = False
 
     def set_bus(self, bus_: bus.Bus):
         self.bus = bus_
@@ -29,9 +32,11 @@ class Processor(threading.Thread):
         return state
 
 
-    def generate_random_instruction(self):
+    async def generate_random_instruction(self):
         inst = utils.hypergeometric_distribution(10, 2, 20, 1)[0]
         address = (utils.hypergeometric_distribution(100, 7, 155, 1)[0])
+        if self.pause_exec:
+            return
         if inst == 0:
             instruction = f"{self.name}: READ {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}"
             self.last_instruction = instruction
@@ -47,15 +52,29 @@ class Processor(threading.Thread):
             self.last_instruction = f"{self.name}: CALC"
             self.logger.add_log(f"{self.name}: CALC")
             print("calc")
+            asyncio.sleep(1)
+    def pause(self):
+        self.pause_exec = True
+        while not self.queue.empty():
+            # Depending on your program, you may want to
+            # catch QueueEmpty
+            self.queue.get_nowait()
+            self.queue.task_done()
+        print("Queue emptied")
+
+    def resume(self):
+        self.pause_exec = False
 
     def add_instruction(self, instruction):
         self.instructions.append(instruction)
+        self.queue.put_nowait(instruction)
 
 
     def run(self):
         while True:
-            if len(self.instructions) > 0:
-                instruction = self.instructions.pop(0)
+            while not self.queue.empty():
+                instruction = self.queue.get_nowait()
+                self.instructions.remove(instruction)
                 if instruction[0] == 'read':
                     print(f"Processor {self.name} read from address {hex(instruction[1])}")
                     value = self.cache.read_self(instruction[1])
@@ -78,6 +97,7 @@ class Processor(threading.Thread):
                         self.logger.add_log(f"Write Miss! {self.name}")
                         self.bus.invalidate_cache(instruction[1], [self.cache])
                         self.cache.print_cache()
+                self.queue.task_done()
             else:
                 time.sleep(0.1)
 
