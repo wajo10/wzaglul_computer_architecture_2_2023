@@ -70,8 +70,8 @@ class Bus(object):
                             print(f"Read hit, read from cache {cache.name}")
                             self.logger.add_log(f"Read hit, {event[2].name} read from cache {cache.name}")
                             # Save data in cache
-                            if not solicited_cache.write(address, data, True):
-                                self.invalidate_cache(address, [solicited_cache, cache])
+                            solicited_cache.write(address, data, True)
+                                # self.invalidate_cache(address, [solicited_cache, cache])
                             cache.print_cache()
                             solicited_cache.print_cache()
                             read_success = True
