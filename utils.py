@@ -62,3 +62,23 @@ class Logs(object):
             return self.logs.pop(0)
         else:
             return False
+
+"""
+# Probability tests
+read = 0
+write = 0
+calc = 0
+error = 0
+for x in range(1000):
+    instr = hypergeometric_distribution(10, 2, 30, 1)[0]
+    if instr == 0:
+        read += 1
+    elif instr == 1:
+        write += 1
+    elif instr == 2:
+        calc += 1
+    else:
+        error += 1
+
+print(" Lecturas: ", read, " Escrituras: ", write, " Calculos: ", calc, " Errores: ", error)
+"""
