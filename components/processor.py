@@ -2,7 +2,6 @@ import threading
 import time
 from components import  bus
 import utils
-import asyncio
 
 
 
@@ -15,7 +14,6 @@ class Processor(threading.Thread):
         self.instructions = []
         self.last_instruction = ""
         self.logger = logger
-        self.queue = asyncio.Queue()
         self.pause_exec = False
 
     def set_bus(self, bus_: bus.Bus):
@@ -32,50 +30,41 @@ class Processor(threading.Thread):
         return state
 
 
-    async def generate_random_instruction(self):
-        inst = utils.hypergeometric_distribution(10, 2, 20, 1)[0]
+    def generate_random_instruction(self):
+        inst = utils.hypergeometric_distribution(10, 2, 30, 1)[0]
         address = (utils.hypergeometric_distribution(100, 7, 155, 1)[0])
         if self.pause_exec:
             return
         if inst == 0:
-            instruction = f"{self.name}: READ {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}"
-            self.last_instruction = instruction
-            self.logger.add_log(instruction)
             self.add_instruction(['read', address])
         elif inst == 1:
             data = int(utils.create_hex_data(), 16)
-            instruction = f"{self.name}: WRITE {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}; {hex(data)}"
-            self.last_instruction = instruction
-            self.logger.add_log(instruction)
             self.add_instruction(['write', address, data])
         else:
-            self.last_instruction = f"{self.name}: CALC"
-            self.logger.add_log(f"{self.name}: CALC")
             print("calc")
-            asyncio.sleep(1)
+            self.add_instruction(['calc', address])
     def pause(self):
         self.pause_exec = True
-        while not self.queue.empty():
-            # Depending on your program, you may want to
-            # catch QueueEmpty
-            self.queue.get_nowait()
-            self.queue.task_done()
-        print("Queue emptied")
+        self.instructions = []
+
 
     def resume(self):
         self.pause_exec = False
 
     def add_instruction(self, instruction):
         self.instructions.append(instruction)
-        self.queue.put_nowait(instruction)
 
 
     def run(self):
         while True:
-            while not self.queue.empty():
-                instruction = self.queue.get_nowait()
-                self.instructions.remove(instruction)
+            while not self.instructions == []:
+                instruction = self.instructions.pop(0)
+                address = instruction[1]
                 if instruction[0] == 'read':
+                    instr = f"{self.name}: READ {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}"
+                    self.last_instruction = instr
+                    self.logger.add_log(instr)
+
                     print(f"Processor {self.name} read from address {hex(instruction[1])}")
                     value = self.cache.read_self(instruction[1])
                     if value is not False:
@@ -88,6 +77,10 @@ class Processor(threading.Thread):
                         self.bus.read_cache(instruction[1], self.cache)
 
                 elif instruction[0] == 'write':
+                    data = instruction[2]
+                    instr = f"{self.name}: WRITE {'0' * (3 - len(bin(address)[2:])) + bin(address)[2:]}; {hex(data)}"
+                    self.last_instruction = instr
+                    self.logger.add_log(instr)
                     if self.cache.write(instruction[1], instruction[2]):
                         print(f"Processor {self.name} wrote {hex(instruction[2])} to address {hex(instruction[1])}")
                         self.logger.add_log(f"Processor {self.name} wrote {hex(instruction[2])} to address {bin(instruction[1])[2:]}")
@@ -97,7 +90,12 @@ class Processor(threading.Thread):
                         self.logger.add_log(f"Write Miss! {self.name}")
                         self.bus.invalidate_cache(instruction[1], [self.cache])
                         self.cache.print_cache()
-                self.queue.task_done()
+                elif instruction[0] == 'calc':
+                    instr = f"{self.name}: CALC"
+                    self.last_instruction = instr
+                    self.logger.add_log(instr)
+                    time.sleep(1)
+                    print(f"Processor {self.name} calculated")
             else:
                 time.sleep(0.1)
 
@@ -177,6 +175,8 @@ class Processor(threading.Thread):
                     if blk.state in ['M', 'E']:
                         blk.data = data
                         blk.state = 'E'
+                        if comes_from_cache:
+                            blk.state = 'S'
                         return True
                     else:
                         # Return False to indicate that invalidation is needed
@@ -186,6 +186,7 @@ class Processor(threading.Thread):
                         else:
                             blk.state = 'M'
                         return False
+
 
             if address % 2 == 0:
                 for blk in self.blocks[0:2]:
@@ -203,7 +204,8 @@ class Processor(threading.Thread):
                 self.blocks[0].data = data
                 if comes_from_cache:
                     self.blocks[0].state = 'S'
-                self.blocks[0].state = 'E'
+                else:
+                    self.blocks[0].state = 'E'
                 return False
             else:
                 for blk in self.blocks[2:4]:

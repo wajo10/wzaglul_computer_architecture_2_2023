@@ -35,7 +35,7 @@ def create_cache_visualization():
                 for idxB, state in enumerate(proc.get_state()):
                     update_block_state(caches[idxC][idxB], state)
                     root.update()
-                instructions[idxC].config(text=f"Executing Instruction:\n{proc.last_instruction}")
+                instructions[idxC].config(text=f"Last Instruction:\n{proc.last_instruction}")
             for idxB, state in enumerate(memory.get_state()):
                 update_memory(idxB, state)
 
@@ -161,6 +161,8 @@ def create_cache_visualization():
             button3.config(text="Next Step", state=tk.NORMAL)
             pause = False
             step = False
+            for proc in processors:
+                proc.resume()
             button1.config(text="Pause", state=tk.DISABLED)
         else:
             button2.config(text="Step By Step")
@@ -310,7 +312,8 @@ def initialize():
         if not pause and step:
             for proc in processors:
                 # call asynchronously
-                asyncio.run(proc.generate_random_instruction())
+                thr = threading.Thread(target=proc.generate_random_instruction)
+                thr.start()
 
             if step_exec:
                 step = False

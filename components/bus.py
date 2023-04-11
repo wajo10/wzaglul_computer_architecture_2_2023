@@ -39,10 +39,18 @@ class Bus(object):
         self.event_queue.put(('read_cache', address, cache))
 
     def invalidate_cache(self, address, cache_list):
+        """
+        Invalidates the cache
+        :param address: address to invalidate
+        :param cache_list:  list of caches to keep the data
+        """
         # Add invalidate event to the event queue
         self.event_queue.put(('invalidate', address, cache_list))
 
     def handle_events(self):
+        """
+        Handles events from the event queue
+        """
         while True:
             # Get the next event from the queue
             event = self.event_queue.get()
